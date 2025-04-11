@@ -12,5 +12,9 @@ public interface UserRepository extends JpaRepository<UserEntity,Long> {
     @Query(value = "select p from UserEntity p where p.email =:email")
     Optional<UserEntity> findByUserEmail(String email);
 
+    @Query(value = "select p from UserEntity p where p.emailHash =:hash")
+    Optional<UserEntity> findByEmailHash(Integer hash);
+
+
     Page<UserEntity> findAll(Pageable pageable);
 }

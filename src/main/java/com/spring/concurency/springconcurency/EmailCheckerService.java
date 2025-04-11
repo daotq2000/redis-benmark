@@ -150,7 +150,7 @@ public class EmailCheckerService {
         return String.format("Loaded %d email hashes (int) to Redis in %d ms", count.get(), (endTime - startTime));
     }
 
-    private Integer hashEmailToOffset(String email) {
+    public Integer hashEmailToOffset(String email) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hashBytes = digest.digest(email.getBytes(StandardCharsets.UTF_8));
