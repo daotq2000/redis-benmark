@@ -1,6 +1,7 @@
 package com.spring.concurency.springconcurency;
 
 
+import org.hibernate.query.sqm.BinaryArithmeticOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongBinaryOperator;
 
 @Service
 public class EmailCheckerService {
@@ -123,7 +125,7 @@ public class EmailCheckerService {
         long startTime = System.currentTimeMillis();
         AtomicLong count = new AtomicLong();
         AtomicInteger counter = new AtomicInteger(0); // Bắt đầu từ trang 0
-        int pageSize = 100000;
+        int pageSize = 1000000;
         try {
             while (true) {
                 Page<UserEntity> page = userRepository.findAll(PageRequest.of(counter.get(), pageSize, Sort.by(Sort.Direction.ASC, "id")));
@@ -133,11 +135,10 @@ public class EmailCheckerService {
                 page.getContent().parallelStream().forEach(user -> {
                     Integer offset = user.getEmailHash().intValue(); // Lấy emailHash và chuyển sang Integer
                     redisTemplate.opsForValue().setBit(EMAIL_HASH_CACHE_KEY, offset, true); // Sử dụng EMAIL_HASH_CACHE_KEY
-                    if (count.incrementAndGet() % 100000 == 0) {
-                        logger.info("Loaded {} email hashes (int) to Redis", count);
-                    }
                 });
                 counter.incrementAndGet();
+                count.accumulateAndGet((long) pageSize, (current, update) -> current + update);
+                logger.info("Loaded {} email hashes (int) to Redis", count.get());
             }
         } catch (Exception e) {
             logger.error("Error loading email hashes (int) to Redis: {}", e.getMessage());
